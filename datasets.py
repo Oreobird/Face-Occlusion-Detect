@@ -104,8 +104,8 @@ class DataSet:
 
 
 class Cofw(DataSet):
-    def __init__(self, data_dir, batch_size=64, input_size=64, class_num=2, fine_tune=False):
-        DataSet.__init__(self, data_dir, batch_size, input_size, fine_tune)
+    def __init__(self, proj_dir, data_dir, batch_size=64, input_size=64, class_num=2, fine_tune=False):
+        DataSet.__init__(self, proj_dir, data_dir, batch_size, input_size, fine_tune)
         self.class_num = class_num
 
         print("fod train_num:%d" % self.train_num())
