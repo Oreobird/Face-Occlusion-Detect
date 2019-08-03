@@ -79,16 +79,18 @@ def crop_face(gt_txt, face_img_dir, show=False):
 			min_y = np.min(yarr)
 			max_y = np.max(yarr)
 			#print(min_x, max_x, min_y, max_y)
-			L = np.max([max_x - min_x, max_y - min_y])
-			x = min_x - 15
-			y = min_y - 15
-			w = L + 30
-			h = L + 30
+			Lmax = np.max([max_x - min_x, max_y - min_y]) * 1.15
+
+			delta = Lmax // 2
+			center_x = (max_x + min_x) // 2
+			center_y = (max_y + min_y) // 2
+			x = int(center_x - delta)
+			y = int(center_y - 0.98 * delta)
+			endx = int(center_x + delta)
+			endy = int(center_y + 1.02 * delta)
 
 			if x < 0: x = 0
 			if y < 0: y = 0
-			endx = x + w
-			endy = y + h
 
 			if endx > img.shape[1]: endx = img.shape[1]
 			if endy > img.shape[0]: endy = img.shape[0]
@@ -307,16 +309,19 @@ def add_block_and_crop_face(gt_txt, block_txt, block_dir, rand_num, show=False):
 					min_y = np.min(yarr)
 					max_y = np.max(yarr)
 					# print(min_x, max_x, min_y, max_y)
-					L = np.max([max_x - min_x, max_y - min_y])
-					x = min_x - 15
-					y = min_y - 15
-					w = L + 30
-					h = L + 30
+					Lmax = np.max([max_x - min_x, max_y - min_y]) * 1.15
+
+					delta = Lmax // 2
+					center_x = (max_x + min_x) // 2
+					center_y = (max_y + min_y) // 2
+					x = int(center_x - delta)
+					y = int(center_y - 0.98 * delta)
+					endx = int(center_x + delta)
+					endy = int(center_y + 1.02 * delta)
 					
 					if x < 0: x = 0
 					if y < 0: y = 0
-					endx = x + w
-					endy = y + h
+				
 					# print(img.shape)
 					if endx > block_img.shape[1]: endx = block_img.shape[1]
 					if endy > block_img.shape[0]: endy = block_img.shape[0]
@@ -493,7 +498,7 @@ def parse_args():
 	parser = argparse.ArgumentParser()
 	parser.register("type", "bool", lambda v: v.lower() == "true")
 	
-	parser.add_argument("--data_dir", type=str, default="", help="Data root directory")
+	parser.add_argument("--data_dir", type=str, default="./data/cofw/", help="Data root directory")
 	return parser.parse_known_args()
 
 if __name__ == '__main__':
