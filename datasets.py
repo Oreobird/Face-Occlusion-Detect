@@ -6,8 +6,8 @@ import tensorflow as tf
 
 
 class DataSet:
-    def __init__(self, data_dir, batch_size=64, input_size=64, fine_tune=False):
-        self.data_dir = data_dir
+    def __init__(self, proj_dir, data_dir, batch_size=64, input_size=64, fine_tune=False):
+        self.data_dir = os.path.join(proj_dir, data_dir)
         self.batch_size = batch_size
         self.input_size = input_size
         self.fine_tune = fine_tune
@@ -34,10 +34,11 @@ class DataSet:
 
 
     def __load_input_img(self, data_dir, file_name, fine_tune=False):
+        img_path = file_name
         if fine_tune:
-            img = cv2.imread(os.path.join(data_dir, file_name))
+            img = cv2.imread(img_path)
         else:
-            img = cv2.imread(os.path.join(data_dir, file_name), cv2.IMREAD_GRAYSCALE)
+            img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
 
         img = cv2.resize(img, (self.input_size, self.input_size)) / 255
         return img
