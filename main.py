@@ -26,7 +26,6 @@ def main(unused_args):
     if not len(FLAGS.proj_dir):
         raise Exception("Please set project directory")
     
-    FOD_DATA_DIR = os.path.join(FLAGS.proj_dir, 'data/cofw/')
     MODEL_DIR = os.path.join(FLAGS.proj_dir, 'model/')
     LOG_DIR = os.path.join(FLAGS.proj_dir, 'log/')
     
@@ -34,7 +33,7 @@ def main(unused_args):
     CLASS_NUM = len(FOD_CLASS_NAMES)
     
 
-    dataset = datasets.Cofw(data_dir=FOD_DATA_DIR, batch_size=FLAGS.batch_size,
+    dataset = datasets.Cofw(proj_dir=FLAGS.proj_dir, data_dir='data/cofw/', batch_size=FLAGS.batch_size,
                             input_size=FLAGS.input_size, class_num=CLASS_NUM,
                             fine_tune=FLAGS.fine_tune)
         
