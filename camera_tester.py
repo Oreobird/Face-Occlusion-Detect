@@ -95,13 +95,13 @@ class CameraTester():
                         frames = []
                         # print(idx)
                         if len(idx):
-                            self.draw_occlusion_area(frame, shape, idx)
-
-                    cv2.imshow("frame", frame)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break
+                            self.draw_occlusion_area(frame, shape, idx)                    
                 else:
                     print("No face detect")
+                    
+                cv2.imshow("frame", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
                         
 if __name__ == '__main__':
     camera_tester= CameraTester()
