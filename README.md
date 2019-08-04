@@ -1,6 +1,6 @@
 # Face-Occlusion-Detect
 A simple CNN face occlusion detect implemented with Tensorflow Keras.
-https://www.jianshu.com/p/88986c27546a
+https://www.toutiao.com/i6720896857616155144/
 
 ### Depencies
 ```
