@@ -29,7 +29,7 @@ def main(unused_args):
     MODEL_DIR = os.path.join(FLAGS.proj_dir, 'model/')
     LOG_DIR = os.path.join(FLAGS.proj_dir, 'log/')
     
-    FOD_CLASS_NAMES = ['normal', 'left_eye', 'right_eye', 'nose', 'mouth', 'chin']
+    FOD_CLASS_NAMES = ['normal', 'right_eye', 'left_eye', 'nose', 'mouth', 'chin']
     CLASS_NUM = len(FOD_CLASS_NAMES)
     
 

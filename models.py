@@ -2,7 +2,6 @@ import tensorflow as tf
 import os
 import numpy as np
 import cv2
-import scipy.io as sio
 import heapq
 
 # import tensorflow.contrib.eager as tfe
@@ -26,10 +25,10 @@ class FodNet:
             
     def __base_model(self, inputs):
         
-        feature = tf.keras.layers.Conv2D(filters=64, kernel_size=(5, 5), strides=(1, 1), padding='same')(inputs)
+        feature = tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding='same')(inputs)
         feature = tf.keras.layers.BatchNormalization()(feature)
         feature = tf.keras.layers.Activation(activation=tf.nn.relu)(feature)
-        feature = tf.keras.layers.Conv2D(filters=64, kernel_size=(5, 5), strides=(1, 1), padding='same')(feature)
+        feature = tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding='same')(feature)
         feature = tf.keras.layers.BatchNormalization()(feature)
         feature = tf.keras.layers.Activation(activation=tf.nn.relu)(feature)
         feature = tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=(2, 2))(feature)
@@ -114,12 +113,12 @@ class FodNet:
             cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_dir,
                                                              save_weights_only=True,
                                                              save_best_only=True,
-                                                             period=2,
+                                                             period=1,
                                                              verbose=1)
             earlystop_cb = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
                                                             mode='min',
                                                             min_delta=0.001,
-                                                            patience=3,
+                                                            patience=1,
                                                             verbose=1)
 
             tb_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir)

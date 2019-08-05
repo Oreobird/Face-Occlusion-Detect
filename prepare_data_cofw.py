@@ -7,6 +7,82 @@ import math
 import shutil
 import argparse
 
+
+class Augmenter:
+	def __init__(self, save_dir="."):
+		self.save_dir = save_dir
+	
+	def adjust_brightness(self, img, a=1.0, g=8):
+		h, w, c = img.shape
+		mask = np.zeros([h, w, c], img.dtype)
+		dst_img = cv2.addWeighted(img, a, mask, 1 - a, g)
+		# cv2.imshow("dst_Img", dst_img)
+		# cv2.waitKey(0)
+		return dst_img
+	
+	def darker(self, img):
+		return self.adjust_brightness(img, 0.8)
+	
+	def brighter(self, img):
+		return self.adjust_brightness(img, 1.3)
+	
+	def flip(self, img):
+		return cv2.flip(img, 1)
+	
+	def gasuss_noise(self, img, mean=0, var=0.001):
+		img = np.array(img / 255, dtype=float)
+		noise = np.random.normal(mean, var ** 0.5, img.shape)
+		out = img + noise
+		if out.min() < 0:
+			low_clip = -1.
+		else:
+			low_clip = 0.
+		out = np.clip(out, low_clip, 1.0)
+		out = np.uint8(out * 255)
+		# cv2.imshow("gasuss", out)
+		# cv2.waitKey(0)
+		return out
+	
+	def augment(self, img):
+		darker_img = self.darker(img)
+		brighter_img = self.brighter(img)
+		noise_img = self.gasuss_noise(img)
+		return darker_img, brighter_img, noise_img
+
+
+def augmentate(img_idx_file, aug_img_dir, aug_label_file):
+	augmenter = Augmenter(aug_img_dir)
+	
+	if not os.path.exists(aug_img_dir):
+		os.mkdir(aug_img_dir)
+	
+	num = 1
+	with open(img_idx_file, 'r') as fr:
+		lines = fr.readlines()
+		with open(aug_label_file, 'w+') as fw:
+			for line in lines:
+				has_phis = False
+				if len(line.split(',')) > 2:
+					img_path, bbox, phis = line.split(',')
+					has_phis = True
+				else:
+					img_path, label = line.split(',')
+				# print(img_path)
+				img = cv2.imread(img_path)
+				
+				darker_img, brighter_img, noise_img = augmenter.augment(img)
+				cv2.imwrite(os.path.join(aug_img_dir, 'dark_' + str(num) + '.jpg'), darker_img)
+				cv2.imwrite(os.path.join(aug_img_dir, 'brighter_' + str(num) + '.jpg'), brighter_img)
+				cv2.imwrite(os.path.join(aug_img_dir, 'noise_' + str(num) + '.jpg'), noise_img)
+				if has_phis:
+					fw.write(os.path.join(aug_img_dir, 'dark_' + str(num) + '.jpg') + ',' + bbox + ',' +  phis)
+					fw.write(os.path.join(aug_img_dir, 'brighter_' + str(num) + '.jpg') + ',' + bbox + ',' +  phis)
+					fw.write(os.path.join(aug_img_dir, 'noise_' + str(num) + '.jpg') + ',' + bbox + ',' +  phis)
+				else:
+					fw.write(os.path.join(aug_img_dir, 'dark_' + str(num) + '.jpg') + ',' + label)
+					fw.write(os.path.join(aug_img_dir, 'brighter_' + str(num) + '.jpg') + ',' + label)
+					fw.write(os.path.join(aug_img_dir, 'noise_' + str(num) + '.jpg') + ',' + label)
+				num += 1
 	
 #mat_file: COFW_train.mat, COFW_test.mat
 #img_token: 'IsTr', 'IsT'
@@ -120,6 +196,7 @@ def face_label(gt_txt, face_img_dir, face_txt, show=False):
 				# print(phis)
 				
 				if show:
+					img = cv2.imread(img_path)
 					for i in range(29):
 						cv2.circle(img, (phis[i], phis[i + 29]), 2, (0, 255, 255))
 						cv2.putText(img, str(i), (phis[i], phis[i + 29]), cv2.FONT_HERSHEY_COMPLEX,0.3,(0,0,255),1)
@@ -129,16 +206,16 @@ def face_label(gt_txt, face_img_dir, face_txt, show=False):
 				slot = phis[58:]
 				label = [1, 0, 0, 0, 0, 0]
 				# if slot[0] and slot[2] and slot[4] and slot[5]:
-				# label[1] = 1  # left eyebrow
+				# label[1] = 1  # right eyebrow
 				# label[0] = 0
 				if slot[16]:  # slot[10] or slot[12] or slot[13] or slot[16] or slot[8]:
-					label[1] = 1  # left eye
+					label[1] = 1  # right eye
 					label[0] = 0
 				# if slot[1] and slot[3] and slot[6] and slot[7]:
-				# label[3] = 1  # right eyebrow
+				# label[3] = 1  # left eyebrow
 				# label[0] = 0
 				if slot[17]:  # slot[11] or slot[14] or slot[15] or slot[17] or slot[9]:
-					label[2] = 1  # right eye
+					label[2] = 1  # left eye
 					label[0] = 0
 				if slot[20]:  # slot[18] or slot[19] or slot[20] or slot[21]:
 					label[3] = 1  # nose
@@ -229,16 +306,16 @@ def add_block_and_crop_face(gt_txt, block_txt, block_dir, rand_num, show=False):
 					slot = phis[58:]
 					label = [1, 0, 0, 0, 0, 0]
 					# if slot[0] and slot[2] and slot[4] and slot[5]:
-					# label[1] = 1  # left eyebrow
+					# label[1] = 1  # right eyebrow
 					# label[0] = 0
 					if slot[16]:  # slot[10] or slot[12] or slot[13] or slot[16]:  # slot[8] outer
-						label[1] = 1  # left eye
+						label[1] = 1  # right eye
 						label[0] = 0
 					# if slot[1] and slot[3] and slot[6] and slot[7]:
-					# label[3] = 1  # right eyebrow
+					# label[3] = 1  # left eyebrow
 					# label[0] = 0
 					if slot[17]:  # slot[11] or slot[14] or slot[15] or slot[17]:  # slot[9] outer
-						label[2] = 1  # right eye
+						label[2] = 1  # left eye
 						label[0] = 0
 					if slot[20]:  # slot[18] or slot[19] or slot[20] or slot[21]:
 						label[3] = 1  # nose
@@ -254,19 +331,19 @@ def add_block_and_crop_face(gt_txt, block_txt, block_dir, rand_num, show=False):
 					area_num = random.randint(1, 6)
 					
 					for i in range(area_num):
-						value = random.randint(0, 255)
+						value = random.randint(10, 240)
 						area_idx = random.randint(1, 6)
 						# print("area_idx:{}".format(area_idx))
 						if area_idx == 1:
 							if label[area_idx] == 0:
 								label[area_idx] = 1
 								label[0] = 0
-								block_img[phis[29 + 12] - 10: phis[29 + 13] + 8, phis[8] - 10: phis[10] + 10] = value
+								block_img[phis[29 + 12] - 8: phis[29 + 13] + 6, phis[8] - 8: phis[10] + 8] = value
 						elif area_idx == 2:
 							if label[area_idx] == 0:
 								label[area_idx] = 1
 								label[0] = 0
-								block_img[phis[29 + 14] - 10: phis[29 + 15] + 8, phis[11] - 10: phis[9] + 10] = value
+								block_img[phis[29 + 14] - 8: phis[29 + 15] + 6, phis[11] - 8: phis[9] + 8] = value
 						elif area_idx == 3:
 							if label[area_idx] == 0:
 								label[area_idx] = 1
@@ -287,12 +364,12 @@ def add_block_and_crop_face(gt_txt, block_txt, block_dir, rand_num, show=False):
 							if label[1] == 0 and label[2] == 0:
 								label[1] = 1
 								label[0] = 0
-								block_img[phis[29 + 12] - 10: phis[29 + 13] + 8,
-								phis[8] - 10: phis[10] + 10] = random.randint(0, 100)
+								block_img[phis[29 + 12] - 8: phis[29 + 13] + 6,
+								phis[8] - 10: phis[10] + 8] = random.randint(0, 50)
 								label[2] = 1
 								label[0] = 0
-								block_img[phis[29 + 14] - 10: phis[29 + 15] + 8,
-								phis[11] - 10: phis[9] + 10] = random.randint(0, 100)
+								block_img[phis[29 + 14] - 8: phis[29 + 15] + 6,
+								phis[11] - 10: phis[9] + 10] = random.randint(0, 50)
 					
 					img_file = str(num) + ".jpg"
 					lab_str = ''
@@ -327,6 +404,10 @@ def add_block_and_crop_face(gt_txt, block_txt, block_dir, rand_num, show=False):
 					if endy > block_img.shape[0]: endy = block_img.shape[0]
 					
 					face = block_img[y: endy, x: endx]
+					
+					# print(face.shape)
+					if not face.shape[0] > 0:
+						raise Exception("face size error")
 					
 					cv2.imwrite(block_dir + img_file, face)
 					if show:
@@ -421,66 +502,71 @@ def prepare_data(data_root):
 						   data_root + "test_gt.txt",
 						   data_root + "train_gt.txt",
 						   100)
+		
+	print("2. Generate augmented train & test faces and label...")
+	if not os.path.exists(data_root + "aug_train_gt.txt"):
+		augmentate(data_root + "train_gt.txt",
+				   data_root + "aug_train/",
+				   data_root + "aug_train_gt.txt")
 
-	# 2. Crop face and get face txt
-	print("2. Crop face and get face txt...")
+	if not os.path.exists(data_root + "aug_test_gt.txt"):
+		augmentate(data_root + "test_gt.txt",
+				   data_root + "aug_test/",
+				   data_root + "aug_test_gt.txt")
+
+	if not os.path.exists(data_root + 'spec_faces.txt'):
+		merge_txt(data_root + 'beard_face.txt', data_root + 'glass_face.txt', data_root + 'spec_faces.txt')
+
+	if not os.path.exists(data_root + "aug_spec_faces.txt"):
+		augmentate(data_root + 'spec_faces.txt',
+				   data_root + 'aug_spec_faces/',
+				   data_root + 'aug_spec_faces.txt')
+
+	print("3. Add block to orig and augmented img and crop faces...")
+	if not os.path.exists(data_root + "merge_train_gt.txt"):
+		merge_txt(data_root + "train_gt.txt", data_root + "aug_train_gt.txt", data_root + "merge_train_gt.txt")
+
+	if not os.path.exists(data_root + "merge_test_gt.txt"):
+		merge_txt(data_root + "test_gt.txt", data_root + "aug_test_gt.txt", data_root + "merge_test_gt.txt")
+
+	if not os.path.exists(data_root + "face_train_block.txt"):
+		add_block_and_crop_face(data_root + "merge_train_gt.txt",
+								data_root + "face_train_block.txt",
+								data_root + "face_train_block/",
+								16, False)
+
+	# 4. Crop face and get face txt
+	print("4. Crop orig train & test faces and get label...")
 	if not os.path.exists(data_root + "face_train/"):
-		crop_face(data_root + "train_gt.txt",
+		crop_face(data_root + "merge_train_gt.txt",
 				  data_root + "face_train/")
 	if not os.path.exists(data_root + "face_train.txt"):
-		face_label(data_root + "train_gt.txt",
+		face_label(data_root + "merge_train_gt.txt",
 				   data_root + "face_train/",
-				   data_root + "face_train.txt")
-		
+				   data_root + "face_train.txt", False)
+
 	if not os.path.exists(data_root + "face_test/"):
-		crop_face(data_root +"test_gt.txt",
+		crop_face(data_root +"merge_test_gt.txt",
 				  data_root + "face_test/")
 	if not os.path.exists(data_root + "face_test.txt"):
-		face_label(data_root + "test_gt.txt",
+		face_label(data_root + "merge_test_gt.txt",
 				   data_root + "face_test/",
 				   data_root + "face_test.txt")
 
-	# 3. merge spec face txt with face train txt
-	print("3. Merge spec face txt with face train txt...")
+	# 5. merge spec face txt with face train txt
+	print("5. Merge spec face txt with face train txt...")
 	if not os.path.exists(data_root + "spec_face.txt"):
-		merge_txt(data_root + "glass_face.txt", data_root + "beard_face.txt", data_root + "spec_face.txt")
+		merge_txt(data_root + "spec_faces.txt", data_root + "aug_spec_faces.txt", data_root + "orig_aug_spec_faces.txt")
 	if not os.path.exists(data_root + "merge_face.txt"):
-		merge_txt(data_root + "spec_face.txt", data_root + "face_train.txt", data_root + "merge_face.txt")
-
-	# 4. shift merge train face
-	print("4. Generate shifted train face...")
-	if not os.path.exists(data_root + "face_train_orig_shift.txt"):
-		img_shift(120, 20,
-				  data_root + 'face_train_shift/',
-				  data_root + 'merge_face.txt',
-				  data_root + 'face_train_orig_shift.txt')
-	
-	if not os.path.exists(data_root + "face_test_shift.txt"):
-		img_shift(120, 20,
-				  data_root + 'face_test_shift/',
-				  data_root + 'face_test.txt',
-				  data_root + 'face_test_shift.txt')
-	
-	# 5. add block to face and shift
-	print("5. Add block to face and shift...")
-	if not os.path.exists(data_root + "face_train_block.txt"):
-		add_block_and_crop_face(data_root + "train_gt.txt",
-								data_root + "face_train_block.txt",
-								data_root + "face_train_block/",
-								8)
-	if not os.path.exists(data_root + 'face_train_block_shift.txt'):
-		img_shift(120, 20,
-				  data_root + 'face_train_block_shift/',
-				  data_root + 'face_train_block.txt',
-				  data_root + 'face_train_block_shift.txt')
+		merge_txt(data_root + "orig_aug_spec_faces.txt", data_root + "face_train.txt", data_root + "merge_face.txt")
 
 	#6. merge all faces to merge_train.txt
 	print("6. Merge all faces to merge_train.txt...")
 	if not os.path.exists(data_root + 'merge_train.txt'):
-		merge_txt(data_root + 'face_train_orig_shift.txt',
-				  data_root + 'face_train_block_shift.txt',
+		merge_txt(data_root + 'merge_face.txt',
+				  data_root + 'face_train_block.txt',
 				  data_root + 'merge_train.txt')
-	
+
 	#7. get train, val and test
 	print("7. Generate train, val and test...")
 	if not os.path.exists(data_root + "train.txt"):
@@ -488,9 +574,9 @@ def prepare_data(data_root):
 						 data_root + "train.txt",
 						 data_root + "val.txt",
 						 0.85)
-	
+
 	if not os.path.exists(data_root + "test.txt"):
-		shutil.copy(data_root + 'face_test_shift.txt',
+		shutil.copy(data_root + 'face_test.txt',
 					data_root + 'test.txt')
 	print("Done!")
 

@@ -7,6 +7,7 @@ import tensorflow as tf
 
 class DataSet:
     def __init__(self, proj_dir, data_dir, batch_size=64, input_size=64, fine_tune=False):
+        self.proj_dir = proj_dir
         self.data_dir = os.path.join(proj_dir, data_dir)
         self.batch_size = batch_size
         self.input_size = input_size
@@ -33,14 +34,17 @@ class DataSet:
         return train_num, val_num, test_num
 
 
-    def __load_input_img(self, data_dir, file_name, fine_tune=False):
-        img_path = file_name
+    def __load_input_img(self, proj_dir, file_name, fine_tune=False):
+        img_path = os.path.join(proj_dir, file_name)
+        
+        # print(img_path)
         if fine_tune:
             img = cv2.imread(img_path)
         else:
             img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-
+        # print(img)
         img = cv2.resize(img, (self.input_size, self.input_size)) / 255
+        
         return img
 
     def load_input_imgpath_label(self, file_name, labels_num=1, shuffle=True):
@@ -85,7 +89,7 @@ class DataSet:
             batch_x = []
             batch_y = []
             for j in range(self.batch_size):
-                img = self.__load_input_img(self.data_dir, filename_list[i + j], self.fine_tune)
+                img = self.__load_input_img(self.proj_dir, filename_list[i + j], self.fine_tune)
                 if not self.fine_tune:
                     img = np.resize(img, (self.input_size, self.input_size, 1))
                 label = label_list[i + j]
@@ -117,6 +121,6 @@ class Cofw(DataSet):
         while True:
             fod_generator = self.load_batch_data_label(fod_filenames, fod_labels, label_num=self.class_num, shuffle=shuffle)
             fod_batch_x, fod_batch_y = next(fod_generator)
-
+ 
             yield ({input_name_list[0]: fod_batch_x},
                    {output_name_list[0]: fod_batch_y})

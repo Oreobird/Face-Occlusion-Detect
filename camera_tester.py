@@ -29,7 +29,7 @@ class CameraTester():
         
         Lx = max_x - min_x
         Ly = max_y - min_y
-        Lmax = int(max(Lx, Ly)) * 1.2
+        Lmax = int(max(Lx, Ly)) * 1.15
         delta = Lmax // 2
         
         center_x = (max(x) + min(x)) // 2
@@ -45,12 +45,13 @@ class CameraTester():
         end_y = img.shape[0] if end_y > img.shape[0] else end_y
         
         crop_face = img[start_y:end_y, start_x:end_x]
-        print(crop_face.shape)
+        # print(crop_face.shape)
         crop_face = cv2.cvtColor(crop_face, cv2.COLOR_RGB2GRAY)
-        
+        # cv2.imshow("crop face", crop_face)
+        # cv2.waitKey(0)
         crop_face = cv2.resize(crop_face, (input_size, input_size)) / 255
         channel = 3 if self.fine_tune else 1
-        crop_face = np.resize(crop_face, (self.input_size, self.input_size, channel))
+        crop_face = np.resize(crop_face, (input_size, input_size, channel))
         return crop_face, start_y, end_y, start_x, end_x
     
     def get_area(self, shape, idx):
@@ -60,7 +61,7 @@ class CameraTester():
         nose = [shape[30], int(abs(shape[31][0] - shape[35][0]) / 1.5)]
         mouth = [(shape[48] + shape[54]) // 2, abs(shape[48][0] - shape[54][0]) // 2]
         chin = [shape[8], nose[1]]
-        area = [None, left_eye, right_eye, nose, mouth, chin]
+        area = [None, right_eye, left_eye, nose, mouth, chin]
         block_area = [x for i, x in enumerate(area) if i in idx]
         return block_area
     
